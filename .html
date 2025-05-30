@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Renkli Mini Forum</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+    #loginDiv, #chatDiv {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      width: 420px;
+      padding: 30px;
+    }
+    #loginDiv {
+      text-align: center;
+    }
+    #loginDiv h1 {
+      margin-bottom: 25px;
+      color: #2575fc;
+      font-weight: 700;
+      font-size: 2rem;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 15px 12px;
+      margin: 10px 0 20px 0;
+      border: 2px solid #2575fc;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: #6a11cb;
+      outline: none;
+    }
+    button {
+      background: #6a11cb;
+      color: white;
+      border: none;
+      padding: 14px 0;
+      width: 100%;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #4e0dbb;
+    }
+    #chat {
+      height: 350px;
+      overflow-y: auto;
+      border: 2px solid #2575fc;
+      border-radius: 12px;
+      padding: 15px;
+      background: #f9f9f9;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+    .message-row {
+      display: flex;
+      justify-content: space-between;
+      background: white;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      align-items: center;
+    }
+    .message-text {
+      max-width: 90%;
+      word-wrap: break-word;
+    }
+    .admin-msg {
+      color: #d32f2f;
+      font-weight: 700;
+    }
+    .message-user {
+      font-weight: 700;
+      margin-right: 8px;
+      color: #2575fc;
+    }
+    .message-time {
+      font-size: 0.75rem;
+      color: #666;
+      margin-left: 10px;
+    }
+    .btn-delete {
+      background: #d32f2f;
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-delete:hover {
+      background: #a02525;
+    }
+    #messageInputContainer {
+      display: flex;
+      gap: 10px;
+    }
+    #message {
+      flex-grow: 1;
+      padding: 15px 12px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 2px solid #2575fc;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    #message:focus {
+      border-color: #6a11cb;
+    }
+  </style>
+</head>
+<body>
+  <div id="loginDiv">
+    <h1>Hoşgeldin, Giriş Yap!</h1>
+    <input type="text" id="username" placeholder="Kullanıcı adı" />
+    <input type="password" id="password" placeholder="Şifre" />
+    <button onclick="login()">Giriş Yap</button>
+  </div>
+
+  <div id="chatDiv" style="display:none;">
+    <h2>Mini Forum Sohbeti</h2>
+    <div id="chat"></div>
+    <div id="messageInputContainer">
+      <input type="text" id="message" placeholder="Mesajını yaz..." />
+      <button onclick="sendMessage()">Gönder</button>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let isAdmin = false;
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    function login() {
+      const usernameInput = document.getElementById('username').value.trim();
+      const passwordInput = document.getElementById('password').value;
+
+      if(usernameInput === '') return alert('Kullanıcı adı boş olamaz!');
+      if(passwordInput === '') return alert('Şifre boş olamaz!');
+
+      if(usernameInput.toLowerCase() === 'kral' && passwordInput === 'kaybett0242E') {
+        isAdmin = true;
+      } else {
+        isAdmin = false;
+      }
+
+      currentUser = usernameInput;
+
+      document.getElementById('loginDiv').style.display = 'none';
+      document.getElementById('chatDiv').style.display = 'block';
+      loadMessages();
+      renderMessages();
+
+      if(isAdmin) alert('Admin olarak giriş yaptınız!');
+      else alert('Normal kullanıcı olarak giriş yaptınız!');
+    }
+
+    const chat = document.getElementById('chat');
+    const messageInput = document.getElementById('message');
+
+    function loadMessages() {
+      const msgs = localStorage.getItem('messages');
+      window.messages = msgs ? JSON.parse(msgs) : [];
+    }
+
+    function saveMessages() {
+      localStorage.setItem('messages', JSON.stringify(window.messages));
+    }
+
+    function renderMessages() {
+      chat.innerHTML = '';
+      window.messages.forEach((msg, index) => {
+        const div = document.createElement('div');
+        div.className = 'message-row';
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        
+        const userSpan = document.createElement('span');
+        userSpan.className = 'message-user';
+        userSpan.textContent = msg.user + ': ';
+        if(msg.user.toLowerCase() === 'kral') userSpan.style.color = '#d32f2f';
+
+        const messageContent = document.createTextNode(msg.text);
+
+        textDiv.appendChild(userSpan);
+        textDiv.appendChild(messageContent);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'message-time';
+        timeSpan.textContent = msg.time;
+
+        div.appendChild(textDiv);
+        div.appendChild(timeSpan);
+
+        if(isAdmin) {
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-delete';
+          delBtn.textContent = 'Sil';
+          delBtn.onclick = () => {
+            window.messages.splice(index, 1);
+            saveMessages();
+            renderMessages();
+          };
+          div.appendChild(delBtn);
+        }
+
+        chat.appendChild(div);
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+      const msg = messageInput.value.trim();
+      if(msg === '') return;
+      const now = new Date();
+      window.messages.push({ user: currentUser, text: msg, time: formatTime(now) });
+      saveMessages();
+      renderMessages();
+      messageInput.value = '';
+    }
+  </script>
+</body>
+</html>
